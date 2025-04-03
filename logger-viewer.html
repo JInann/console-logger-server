@@ -400,7 +400,7 @@
         if (host) {
             WS_URL = `ws://${host}/ws-logger/viewer`;
         } else {
-            WS_URL = `${window.location.host}/ws-logger/viewer`
+            WS_URL = `wss://${window.location.host}/ws-logger/viewer`
         }
         // 使用当前页面的主机名和端口构建 WebSocket URL
         function updateConnectionStatus(status, message = '') {
