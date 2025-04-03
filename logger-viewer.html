@@ -395,7 +395,7 @@
         let connectedPages = new Set();
 
         // 使用当前页面的主机名和端口构建 WebSocket URL
-        const WS_URL = `ws://loggerhost/ws-logger/viewer`;
+        const WS_URL = `wss://loggerhost/ws-logger/viewer`;
 
         function updateConnectionStatus(status, message = '') {
             const statusText = message ? `${status} (${message})` : status;
