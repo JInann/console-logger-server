@@ -393,10 +393,11 @@
         const MAX_RETRY_COUNT = 5;
         let retryCount = 0;
         let connectedPages = new Set();
-
+        // 获取query参数
+        const query = new URLSearchParams(window.location.search);
+        const host = query.get('host') || window.location.host;
         // 使用当前页面的主机名和端口构建 WebSocket URL
-        const WS_URL = `loggerhost/ws-logger/viewer`;
-
+        const WS_URL = `//${host}/ws-logger/viewer`;
         function updateConnectionStatus(status, message = '') {
             const statusText = message ? `${status} (${message})` : status;
             connectionStatus.textContent = statusText;

@@ -9,11 +9,7 @@ fastify.get('/logger-viewer.html', async function handler(req, res) {
   res.headers({
     'Content-Type': 'text/html',
   });
-  // 替换loggerhost
-  return loggerViewerHtml.replace(
-    'loggerhost',
-    process.env.loggerhost || 'ws://localhost:8080'
-  );
+  return loggerViewerHtml;
 });
 fastify.register(consoleLogger);
 // Run the server!

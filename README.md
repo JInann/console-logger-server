@@ -48,11 +48,6 @@ pnpm install
 ```
 
 ## 使用方法
-0. 配置环境变量：
-
-```bash
-loggerhost=日志ws服务器地址 # 默认ws://localhost:8080
-```
 
 1. 启动服务器：
 ```bash
@@ -65,13 +60,17 @@ npm start
 3. 在需要监控的vite项目中集成插件：
 
 ```bash
-
+  pnpm add -D vite-plugin-console-logger
 ```
 
 ```javascript
 {
   plugins:[
-      consoleLogger({host:VITE_APP_ENV=='testing'?"https://log.xxx.com/logger-viewer.html":''})
+      isProd()?false: // 只在测试及开发环境使用
+      consoleLogger({
+        useRemote: false, // 使用本地（局域网）模式
+        remoteUrl: 'http://your-remote-url/logger-viewer.html' // 当前项目部署的路径
+      })
   ]
 }
 ```
