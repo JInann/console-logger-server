@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc & node dist/server.js",
+    "start": "nodemon server.js",
+    "web": "vite",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -18,6 +19,10 @@
   "devDependencies": {
     "@fastify/middie": "^9.0.3",
     "@types/ws": "^8.18.1",
-    "typescript": "^5.8.2"
+    "@vitejs/plugin-vue": "^5.2.3",
+    "nodemon": "^3.1.9",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.5",
+    "vue": "^3.5.13"
   }
 }

@@ -1,52 +1,15 @@
 import { WebSocket, WebSocketServer } from 'ws';
-import { FastifyInstance } from 'fastify';
 import fastifyMiddle from '@fastify/middie';
-// 消息类型定义
-interface BaseMessage {
-  type: string;
-}
 
-interface LogMessage extends BaseMessage {
-  type: 'log';
-  timestamp: string;
-  level: 'log' | 'info' | 'warn' | 'error';
-  args: string[];
-  url: string;
-}
-
-interface ExecuteCodeMessage extends BaseMessage {
-  type: 'execute';
-  code: string;
-  targetUrl: string;
-}
-
-interface CodeResultMessage extends BaseMessage {
-  type: 'result';
-  result: string;
-  error?: string;
-  url: string;
-}
-
-interface PageListMessage extends BaseMessage {
-  type: 'pages';
-  pages: string[];
-}
-
-interface ConnectedClient {
-  socket: WebSocket;
-  type: 'viewer' | 'logger';
-  url?: string; // 仅用于logger类型
-}
-
-let wsServer: WebSocketServer;
-const clients = new Map<WebSocket, ConnectedClient>();
-const viewers = new Set<WebSocket>();
-const logBuffer: LogMessage[] = []; // 用于存储最近的日志
+let wsServer;
+const clients = new Map();
+const viewers = new Set();
+const logBuffer = []; // 用于存储最近的日志
 const MAX_BUFFER_SIZE = 1000; // 最大缓存日志数量
 
 // 获取所有已连接的页面URL列表
-function getConnectedPages(): string[] {
-  const pages = new Set<string>();
+function getConnectedPages() {
+  const pages = new Set();
   for (const client of clients.values()) {
     if (client.type === 'logger' && client.url) {
       pages.add(client.url);
@@ -57,7 +20,7 @@ function getConnectedPages(): string[] {
 
 // 广播页面列表给所有查看器
 function broadcastPageList() {
-  const message: PageListMessage = {
+  const message = {
     type: 'pages',
     pages: getConnectedPages(),
   };
@@ -74,7 +37,7 @@ function broadcastPageList() {
 }
 
 // 广播日志消息给所有查看器
-function broadcastToViewers(logData: LogMessage) {
+function broadcastToViewers(logData) {
   viewers.forEach((viewer) => {
     if (viewer.readyState === WebSocket.OPEN) {
       try {
@@ -87,7 +50,7 @@ function broadcastToViewers(logData: LogMessage) {
 }
 
 // 发送代码执行结果给指定的查看器
-function sendResultToViewer(viewer: WebSocket, result: CodeResultMessage) {
+function sendResultToViewer(viewer, result) {
   if (viewer.readyState === WebSocket.OPEN) {
     try {
       viewer.send(JSON.stringify(result));
@@ -98,7 +61,7 @@ function sendResultToViewer(viewer: WebSocket, result: CodeResultMessage) {
 }
 
 // 将代码发送给目标页面执行
-function executeCodeOnPage(code: string, targetUrl: string, viewer: WebSocket) {
+function executeCodeOnPage(code, targetUrl, viewer) {
   let targetFound = false;
 
   for (const [socket, client] of clients.entries()) {
@@ -135,14 +98,14 @@ function executeCodeOnPage(code: string, targetUrl: string, viewer: WebSocket) {
   }
 }
 
-function addToBuffer(logData: LogMessage) {
+function addToBuffer(logData) {
   logBuffer.push(logData);
   if (logBuffer.length > MAX_BUFFER_SIZE) {
     logBuffer.shift();
   }
 }
 
-export default async function configureServer(server: FastifyInstance) {
+export default async function configureServer(server) {
   await server.register(fastifyMiddle);
 
   // 创建 WebSocket 服务器
@@ -183,7 +146,12 @@ export default async function configureServer(server: FastifyInstance) {
     } else {
       // 处理日志客户端连接
       console.log('Logger client connected');
-      clients.set(socket, { socket, type: 'logger', url: undefined });
+      clients.set(socket, {
+        socket,
+        type: 'logger',
+        url: undefined,
+        clientFlag: Math.random().toString(16).substring(2, 10),
+      });
     }
 
     socket.on('message', (message) => {
@@ -192,7 +160,7 @@ export default async function configureServer(server: FastifyInstance) {
 
         if (!data.type) {
           // 处理旧格式的日志消息
-          const logMessage: LogMessage = {
+          const logMessage = {
             type: 'log',
             ...data,
           };
@@ -200,7 +168,7 @@ export default async function configureServer(server: FastifyInstance) {
           // 更新客户端URL
           const client = clients.get(socket);
           if (client && client.type === 'logger' && !client.url) {
-            client.url = data.url;
+            client.url = client.clientFlag + '@' + data.url;
             broadcastPageList();
           }
 
@@ -208,11 +176,12 @@ export default async function configureServer(server: FastifyInstance) {
           const timestamp = new Date(logMessage.timestamp).toLocaleTimeString();
           const level = logMessage.level.toUpperCase().padEnd(5);
           const url = new URL(logMessage.url).pathname;
-
           console.log(
-            `[${timestamp}] ${level} ${url}: ${logMessage.args.join(' ')}`
+            `[${timestamp}] ${level} ${
+              client?.clientFlag || ''
+            }:${url}: ${logMessage.args.join(' ')}`
           );
-
+          logMessage.url = client.url;
           addToBuffer(logMessage);
           broadcastToViewers(logMessage);
         } else {
@@ -220,13 +189,13 @@ export default async function configureServer(server: FastifyInstance) {
           switch (data.type) {
             case 'execute': {
               // 处理代码执行请求
-              const { code, targetUrl } = data as ExecuteCodeMessage;
+              const { code, targetUrl } = data;
               executeCodeOnPage(code, targetUrl, socket);
               break;
             }
             case 'result': {
               // 处理代码执行结果
-              const resultMessage = data as CodeResultMessage;
+              const resultMessage = data;
               // 找到发送执行请求的查看器
               for (const [viewerSocket] of clients) {
                 if (viewers.has(viewerSocket)) {
