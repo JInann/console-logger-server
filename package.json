@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon server.js",
-    "web": "vite",
+    "start": "vite",
+    "dev": " vite",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fastify/websocket": "^11.0.2",
     "fastify": "^5.2.2",
+    "vite-plugin-console-logger": "1.0.8",
     "ws": "^8.18.1"
   },
   "type": "module",
