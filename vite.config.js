@@ -6,5 +6,6 @@ export default defineConfig({
   plugins: [vue(), viteConsoleLogger({ onlyServer: true })],
   server: {
     port: 8080,
+    allowedHosts: ['localhost', '127.0.0.1', 'log.1036892522.top'],
   },
 });
